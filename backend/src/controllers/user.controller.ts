@@ -9,7 +9,7 @@ export const getUserProfile = async (req: Request, res: Response) => {
     const userId = req.params.id;
 
     try {
-        const user = await User.findById(userId).select("-password");
+        const user = await User.findById(userId).select("-password").populate("chats friends", "-password");
         if (!user) {
             return res.status(404).json({ error: "User not found" });
         }

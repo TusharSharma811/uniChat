@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import { Archivo , Archivo_Black } from "next/font/google";
 import "./globals.css";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -35,7 +36,9 @@ export default function RootLayout({
       <body
         className={`antialiased`}
       >
-        {children}
+      
+          {children}
+       
       </body>
     </html>
   );

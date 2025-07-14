@@ -2,13 +2,14 @@
 
 import type React from "react"
 
-import { useState, useRef, useEffect } from "react"
+import { useState, useRef, useEffect, use } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Card } from "@/components/ui/card"
 import { Send, Search, MoreVertical, Phone, Video, Settings, MessageCircle, User } from "lucide-react"
 import Link from "next/link"
+import { useParams } from "next/navigation"
 
 interface Message {
   id: string
@@ -28,61 +29,42 @@ interface Chat {
 }
 
 export default function ChatPage() {
+  const userId = useParams().id as string
   const [message, setMessage] = useState("")
-  const [messages, setMessages] = useState<Message[]>([
-    {
-      id: "1",
-      text: "Hey! How are you doing?",
-      sender: "other",
-      timestamp: new Date(Date.now() - 1000 * 60 * 5),
-      senderName: "Alice Johnson",
-    },
-    {
-      id: "2",
-      text: "I'm doing great! Just working on some new projects. How about you?",
-      sender: "user",
-      timestamp: new Date(Date.now() - 1000 * 60 * 3),
-    },
-    {
-      id: "3",
-      text: "That sounds exciting! I'd love to hear more about it.",
-      sender: "other",
-      timestamp: new Date(Date.now() - 1000 * 60 * 1),
-      senderName: "Alice Johnson",
-    },
-  ])
+  const [messages, setMessages] = useState<Message[]>([])
 
-  const [chats] = useState<Chat[]>([
-    {
-      id: "1",
-      name: "Alice Johnson",
-      lastMessage: "That sounds exciting! I'd love to hear more about it.",
-      timestamp: "2 min ago",
-      unread: 2,
-    },
-    {
-      id: "2",
-      name: "Team Project",
-      lastMessage: "The deadline has been moved to next week",
-      timestamp: "1 hour ago",
-      unread: 5,
-    },
-    {
-      id: "3",
-      name: "Bob Smith",
-      lastMessage: "Thanks for the help earlier!",
-      timestamp: "3 hours ago",
-    },
-    {
-      id: "4",
-      name: "Design Team",
-      lastMessage: "New mockups are ready for review",
-      timestamp: "Yesterday",
-    },
-  ])
+  const [chats , setChats] = useState<Chat[]>([])
 
   const [selectedChat, setSelectedChat] = useState(chats[0])
   const messagesEndRef = useRef<HTMLDivElement>(null)
+
+  useEffect(() => {
+    const token = localStorage.getItem("token")
+    if (!token) {
+      window.location.href = "/auth/login"
+    }
+    const fetchUserProfile = async () => {
+      try {
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/users/${userId}`, {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        })
+        if (!response.ok) {
+          throw new Error("Failed to fetch user profile")
+        }
+        const data = await response.json()
+        setChats(data.chats || [])
+        console.log("User profile:", data)
+        
+      } catch (error) {
+        console.error("Error fetching user profile:", error)
+        window.location.href = "/auth/login"
+      }
+    }
+    fetchUserProfile()
+  }, [userId])
+
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" })
@@ -164,9 +146,9 @@ export default function ChatPage() {
             >
               <div className="flex items-center space-x-3">
                 <Avatar>
-                  <AvatarImage src={chat.avatar || "/placeholder.svg"} />
+                  <AvatarImage src={chat?.avatar || "/placeholder.svg"} />
                   <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white">
-                    {chat.name
+                    {chat?.name
                       .split(" ")
                       .map((n) => n[0])
                       .join("")}
@@ -174,10 +156,10 @@ export default function ChatPage() {
                 </Avatar>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between">
-                    <h3 className="font-medium text-white truncate">{chat.name}</h3>
-                    <span className="text-xs text-gray-400">{chat.timestamp}</span>
+                    <h3 className="font-medium text-white truncate">{chat?.name}</h3>
+                    <span className="text-xs text-gray-400">{chat?.timestamp}</span>
                   </div>
-                  <p className="text-sm text-gray-300 truncate">{chat.lastMessage}</p>
+                  <p className="text-sm text-gray-300 truncate">{chat?.lastMessage}</p>
                 </div>
                 {chat.unread && (
                   <div className="w-5 h-5 bg-gray-600 rounded-full flex items-center justify-center">
@@ -197,16 +179,16 @@ export default function ChatPage() {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <Avatar>
-                <AvatarImage src={selectedChat.avatar || "/placeholder.svg"} />
+                <AvatarImage src={selectedChat?.avatar || "/placeholder.svg"} />
                 <AvatarFallback className="bg-gradient-to-br from-gray-600 to-gray-800 text-white">
-                  {selectedChat.name
+                  {selectedChat?.name
                     .split(" ")
                     .map((n) => n[0])
                     .join("")}
                 </AvatarFallback>
               </Avatar>
               <div>
-                <h2 className="font-semibold text-white">{selectedChat.name}</h2>
+                <h2 className="font-semibold text-white">{selectedChat?.name}</h2>
                 <p className="text-sm text-gray-300">Online</p>
               </div>
             </div>

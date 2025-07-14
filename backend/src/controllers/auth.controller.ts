@@ -20,7 +20,7 @@ export const registerUser = async (req : Request, res: Response) => {
         const newUser = new User({ name, email, username, password: hashedPassword });
         await newUser.save();
         const token = await jwt.sign({ id: newUser._id }, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '1h' });
-        res.status(201).json({ message: "User registered successfully", token });
+        res.status(201).json({ message: "User registered successfully", token , user: { id: newUser._id, name: newUser.name, email: newUser.email, username: newUser.username } });
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }
@@ -31,12 +31,21 @@ export const loginUser = async (req: Request, res: Response) => {
 
     try {
         const user = await User.findOne({ email });
-        const isPasswordValid = user ? await bcrypt.compare(password, user.password) : false;
-        if (!user || !isPasswordValid) {
-            return res.status(401).json({ error: "Invalid credentials" });
-        }
+        console.log(user);
+        
+       if (!user) {
+        return res.status(401).json({ message: "Invalid email or password" });
+      }
+
+const isPasswordValid = await bcrypt.compare(password, user.password);
+
+if (!isPasswordValid) {
+  console.log("Invalid password attempt for user:", email , user.password);
+  
+  return res.status(401).json({ message: "Invalid email or password" });
+}
         const token = jwt.sign({ id: user._id }, process.env.JWT_SECRET || 'fallback-secret', { expiresIn: '1h' });
-        res.status(200).json({ message: "User logged in successfully", token });
+        res.status(200).json({ message: "User logged in successfully", token , user: { id: user._id, name: user.name, email: user.email, username: user.username } });
     } catch (error) {
         res.status(500).json({ error: "Internal server error" });
     }

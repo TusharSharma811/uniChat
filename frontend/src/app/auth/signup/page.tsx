@@ -2,7 +2,7 @@
 
 import type React from "react";
 
-import { useState } from "react";
+import { use, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,7 @@ export default function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
+    username: "",
     email: "",
     password: "",
     confirmPassword: "",
@@ -38,11 +39,34 @@ export default function SignupPage() {
 
     setIsLoading(true);
 
-    // Simulate signup
-    setTimeout(() => {
+    try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/register`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          username: formData.username,
+          email: formData.email,
+          password: formData.password,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to create account");
+      }
+
+      const data = await response.json();
+      console.log("Account created successfully:", data);
+      router.push(`/chat/${data.user.id}`); // Redirect to chat page with user ID
+    } catch (error) {
+      console.error("Error creating account:", error);
+      alert("Failed to create account. Please try again.");
+    } finally {
       setIsLoading(false);
-      router.push("/chat");
-    }, 1000);
+    }
+   
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -88,6 +112,21 @@ export default function SignupPage() {
                   type="text"
                   placeholder="Enter your full name"
                   value={formData.name}
+                  onChange={handleChange}
+                  className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
+                  required
+                />
+              </div>
+               <div className="space-y-2">
+                <Label htmlFor="username" className="text-white">
+                  Username
+                </Label>
+                <Input
+                  id="username"
+                  name="username"
+                  type="text"
+                  placeholder="Enter your username"
+                  value={formData.username}
                   onChange={handleChange}
                   className="bg-white/10 border-white/20 text-white placeholder:text-gray-400"
                   required

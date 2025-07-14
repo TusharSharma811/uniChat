@@ -11,22 +11,48 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { MessageCircle, Eye, EyeOff } from "lucide-react"
 
+
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false)
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
-  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState("")
+
   const router = useRouter()
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    setIsLoading(true)
+    setError("")
 
-    // Simulate login
-    setTimeout(() => {
-      setIsLoading(false)
-      router.push("/chat")
-    }, 1000)
+    if (!email || !password) {
+      setError("Please fill in all fields")
+      return
+    }
+
+  try {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_ENDPOINT}/auth/login`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ email, password }),
+      })
+
+      if (!response.ok) {
+        const data = await response.json()
+        setError(data.error || "Login failed")
+        return
+      }
+
+      const data = await response.json()
+      localStorage.setItem("token", data.token)
+      router.push(`/chat/${data.user.id }`)
+    } catch (err) {
+      console.error("Login error:", err)
+      setError("An error occurred. Please try again.")
+    }
+    
+   
   }
 
   return (
@@ -96,9 +122,10 @@ export default function LoginPage() {
               <Button
                 type="submit"
                 className="w-full bg-gradient-to-r from-gray-700 to-gray-900 hover:from-gray-600 hover:to-gray-800"
-                disabled={isLoading}
+                
               >
-                {isLoading ? "Signing in..." : "Sign In"}
+                Login
+             
               </Button>
             </form>
              <Button
